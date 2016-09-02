@@ -1,3 +1,54 @@
+2006-09-21  Mike Stump  <mrs@apple.com>
+
+	Radar 4736998
+	* g++.apple/asm-block-60.C: Add.
+	* gcc.apple/asm-block-60.c: Add.
+
+2006-09-06  Stuart Hastings  <stuart@apple.com>
+
+	Radar 4515157
+	* gcc.apple/default-x86_64-sse3.c: New.
+
+2006-09-05  Mike Stump  <mrs@apple.com>
+
+	Radar 4699545
+	* g++.apple/asm-block-59.C: Add.
+	* gcc.apple/asm-block-59.c: Add.
+
+2006-06-29  Mike Stump  <mrs@apple.com>
+
+	Radar 4560301
+	* g++.apple/asm-block-53.C: Add.
+	* gcc.apple/asm-block-53.c: Add.
+
+2006-08-29  Mike Stump  <mrs@apple.com>
+
+	Radar 4699524
+	* g++.apple/asm-block-58.C: Add.
+	* gcc.apple/asm-block-58.c: Add.
+
+2006-08-29  Hui-May Chang  <hm.chang@apple.com>
+
+        Radar 4645709
+        * gcc.apple/i386-bitmask1.c, i386-bitmask2.c: New.
+
+2006-08-25  Hui-May Chang  <hm.chang@apple.com>
+
+        Radar 4614623, 4700281
+        * gcc.apple/i386-unaligned-movaps.c: New.
+
+2006-08-24  Mike Stump  <mrs@apple.com>
+
+	Radar 4682427
+	* g++.apple/asm-block-57.C: Add.
+	* gcc.apple/asm-block-57.c: Add.
+
+2006-07-28  Mike Stump  <mrs@apple.com>
+
+	Radar 4653181
+	* g++.apple/asm-block-56.C: Add.
+	* gcc.apple/asm-block-56.c: Add.
+
 2006-07-27  Eric Christopher  <echristo@apple.com>
 
     Radar 4655246
