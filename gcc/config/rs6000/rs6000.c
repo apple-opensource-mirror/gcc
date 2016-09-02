@@ -13614,6 +13614,12 @@ rs6000_emit_epilogue (sibcall)
 	frame_reg_rtx = gen_rtx_REG (Pmode, DEFAULT_ABI == ABI_DARWIN ? 2 : 11);
       /* APPLE LOCAL end AltiVec */
 
+      /* APPLE LOCAL emit stack tie */
+      /* Prevent scheduler from moving references to the stack, which
+	 might fall below the red zone after R1 is updated,
+	 across the insn that restores R1. */
+      rs6000_emit_stack_tie ();
+
       emit_move_insn (frame_reg_rtx,
 		      gen_rtx_MEM (Pmode, sp_reg_rtx));
       

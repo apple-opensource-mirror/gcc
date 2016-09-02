@@ -11,7 +11,7 @@ type="horizontal" size="5">&nbsp;</b><a logicalPath="//apple_ref/doc/uid/TP30000
 <br><br>
 <!-- end of path -->
 
-<h1>Mac OS X 10.3 Xcode Developer Preview:<br>GCC 3.3</h1>
+<h1>Mac OS X 10.3 Xcode release:<br>GCC 3.3</h1>
 
 <p>
 These notes describe Apple's GCC 3.3, which is based on version 3.3 of the
@@ -272,6 +272,53 @@ supported in GCC 3.3; use the new form instead.</p>
 
 <H2>New language features</H2>
 
+<h3>STL debugging mode for C++</h3>
+
+<p>By default, libstdc++ is built with efficiency in mind, and
+  therefore performs little or no error checking that is not required
+  by the C++ standard.  This release adds support for the <i>libstdc++
+  debug mode</i>, which performs run-time checking for correct usage
+  of the C++ standard library.  Incorrect usage (such as passing an
+  iterator to the wrong container, or passing an invalid range to a
+  generic algorithm) will result in a clear error message followed by
+  an abort, rather than an unpredictable crash.</p>
+
+<p>To enable STL debugging mode, compile your application with the
+<code>-D_GLIBCXX_DEBUG</code> compile flag.  Note that this flag
+  changes the sizes and behavior of standard class templates such
+  as <code>std::vector</code>, and therefore you can only link code
+  compiled with debug mode and code compiled without debug mode if no
+  instantiation of a container is passed between the two translation
+  units. This does <em>not</em> mean that you are required to
+  recompile your entire application: for instance, if one source file
+  uses <code>std::vector</code> but <code>std::vector</code> doesn't
+  occur in its public interface, that file can be recompiled in debug
+  mode even if the rest of the program is not compiled in debug
+  mode.</p>
+
+<p>When it is not feasible to recompile your application, or
+  when only specific containers need checking, debugging containers are
+  available as GNU extensions. These debugging containers are
+  functionally equivalent to the containers used in debug mode,
+  e.g., <code>__gnu_debug::vector&lt;int&gt;</code> is equivalent
+  to <code>std::vector&lt;int&gt;</code> in debug mode, but
+  the <code>__gnu_debug</code> versions can be used in either release
+  or debug mode without changing semantics.</p>
+
+<p><i>Pedantic</i> debug mode checks not only for errors, but also
+  for usages that rely on GNU extensions and that, while correct, may
+  not be portable to other compilers. In pedantic mode, for example,
+  constructing an <code>std::string</code> with a null pointer will
+  result in an abort, not an exception.  Pedantic debug mode is not
+  the default.  To enable pedantic debug mode, compile your program with
+  <i>both</i> <code>-D_GLIBCXX_DEBUG</code> and <code>-D_GLIBCXX_DEBUG_PEDANTIC</code>. 
+</p>
+
+<p>STL debugging mode is recommended during developent or when you
+  suspect an error caused by incorrect use of the C++ standard
+  library.  It is not recommended for deployment builds, because it
+  introduces substantial overhead.</p>
+
 <h3>ObjC/ObjC++ exception and synchronization support</h3>
 <p>
 The Objective-C language now offers syntactic support for structured
@@ -527,6 +574,7 @@ keyword.</li>
 <li>Optimization for code size (-Os) produces the smallest binary
 size. It performs no loop unrolling, scheduling optimizations, or
 register renaming. The performance is similar to -O2.  </li>
+<li><code>-fast</code>: see below.</li>
 </UL>
 <p>
 When performing function inlining, GCC 3 inlines forward-referenced
@@ -592,6 +640,139 @@ don't strictly follow the ISO C rules about the type with which an
 object may be accessed may behave unexpectedly.
 </p>
 
+<H2>Optimization using the new <code>-fast</code> flag</H2>
+<p>
+<code>-fast</code> changes the overall optimization strategy of GCC 3.3 in
+order to produce the fastest possible running code for G4 and G5
+architectures. Optimizations under <code>-fast</code> are roughly
+grouped under the following categories.
+</p>
+
+<ol>
+
+<li><p>
+   <code>-fast</code> sets the optimization level to <code>-O3</code>,
+   the highest level of optimization supported by GCC 3.3. If any
+   other optimization level (<code>-O0</code>, <code>-O1</code>, <code>-O2</code>
+   or <code>-Os</code>) is specified, it is ignored by the compiler.
+</p></li>
+
+<li><p>
+   Alignment. Assume alignments for loops, functions, branches and
+   structure data fields that provide fastest performance on the
+   PowerPC. <code>-fast</code> sets the following alignment-specific
+   options:
+</p>
+<pre>
+   -falign-loops-max-skip=15
+   -falign-jumps-max-skip=15
+   -falign-loops=16
+   -falign-jumps=16
+   -falign-functions=16
+   -malign-natural
+</pre>
+</li>
+
+<li><p><code>-fast</code> enables the <tt>-ffast-math</tt> option, which
+allows certain unsafe math operations for performance gains.</p></li>
+
+   
+<li><p>Strict aliasing rules.
+   <code>-fast</code> allows the compiler to assume the strictest
+   aliasing rules applicable to the language being compiled.
+   For C and C++, this activates optimizations based on the type of
+   expressions: an object of one type is assumed never
+   to reside at the same address as an object of a different type,
+   unless the types are almost the same. Furthermore, struct
+   field references are assumed not to alias each other as long as their
+   direct and indirect enclosing structure types are distinct. <code>-fast</code>
+   enables the following aliasing options:</p>
+<pre>
+   -fstrict-aliasing
+   -frelax-aliasing
+   -fgcse-mem-alias 
+</pre>
+
+<p>Warning: the behavior of correct programs will not be affected by
+  strict aliasing, but programs that make use of nonportable type
+  conversions may behave in unexpected ways.</p>
+</li>
+
+<li><p><code>-fast</code> enables various performance-related code
+transformations. These include loop unrolling, transposing nested
+loops to improve locality of array element access, conversion of
+certain initiliazation loops to <tt>memset</tt> calls, and inline
+expansion of calls to library functions such as <tt>floor</tt>. 
+<tt>-fast</tt> enables the following code transformation options:
+</p>
+<pre>
+   -funroll-loops
+   -floop-transpose
+   -floop-to-memset
+   -finline-floor  <i>(G5 only)</i>
+</pre>
+<p>Some of these transformations increase code size.</p>
+</li>
+
+<li><p>
+ G5 specific instruction generation. With <code>-fast</code> (unless
+   <tt>-mcpu=G4</tt> is specified), GCC 3.3 generates instructions which
+   are specific to G5 and result in performance gain for G5.  The
+   following options are assumed for G5 under <code>-fast</code>:</p>
+<pre>   
+   -mcpu=G5
+   -mpowerpc64
+   -mpowerpc-gpopt
+</pre>
+</li>
+
+<li><p>Scheduling changes. <code>-fast</code> option allows inter-block
+   scheduling, and scheduling specific to the G5 architecture.  One
+   such scheduling change is load after a store that partially loads what
+   was stored.  The following scheduling-related options are enabled by
+   <code>-fast</code>:</p>
+<pre>
+   -mtune=G5  <i>(unless -mtune=G4 is specified)</i>
+   -fsched-interblock
+   -fload-after-store 
+   --param max-gcse-passes=3 
+   -fno-gcse-sm 
+   -fgcse-loop-depth
+</pre>
+</li>
+
+<li><p>
+    <code>-fast</code> enables intermodule inlining when all source
+    files are placed on the same command line. The following options
+    are set by <code>-fast</code> and affect such inlining:</p>
+<pre>
+   -funit-at-a-time 
+   -fcallgraph-inlining 
+   -fdisable-typechecking-for-spec
+</pre>
+</li>
+
+<li><p><code>-fast</code> sets -mdynamic-no-pic by default. This allows
+   for generation of non-relocatable code and is not suitable for
+   shared libraries. This option may be overridden by -fPIC.</p></li>
+</ol>
+
+<p>Users of <code>-fast</code> should be aware of the following caveats:</p>
+<ul>
+<li>Because <code>-fast</code> enables highly aggressive
+  optimizations, some of which may have an effect on code size or on
+  program behavior, thorough testing is especially important before 
+  deploying applications compiled with <code>-fast</code>.</li>
+<li>For maximum run-time performance you should experiment with a
+  variety of optimization options; no one set of flags is best for
+  all applications.</li>
+<li>In future releases of GCC, <code>-fast</code> may enable a
+  different set of optimization options.  The intention behind this
+  option is that <code>-fast</code> will enable optimizations that
+  result in the fastest code for most applications.</li>
+</ul>
+  
+
 <H2>How to build the compiler from source</H2>
 
 <p>
@@ -612,9 +793,9 @@ compiler in this release.
 <H2>Ways in which Apple GCC 3.3 differs from gcc on other platforms</H2>
 
 <UL>
-<li>Xcode Tools uses STABS as its debugging format, and do not support
+<li>Xcode Tools uses STABS as its debugging format, and does not support
 DWARF.</li>
-<li>Apple GCC 3.3 generates optmized STABS by default. That is, it
+<li>Apple GCC 3.3 generates optimized STABS by default. That is, it
   emits debug symbols only for symbols that are actually used.  The
   "generic" FSF GCC emits debug information for all symbols,
   regardless of whether they are used.  The <tt>-gfull</tt> command
@@ -622,10 +803,12 @@ DWARF.</li>
   optimization and to emit debug information for all symbols, as the
   FSF GCC compiler does.</li>
 <li>Apple GCC 3.3 removes empty BINCL/EINCL STABS.  This is helpful in
-  improving GDB startup time. This optimization is not yet available
-  in FSF GCC.</li>
-<li> Apple GCC's implementation of Altivec uses Motorola syntax, as
-  opposed to the usual GNU Altivec syntax.</li>
+  improving GDB startup time. This optimization will be available in FSF 
+  GCC 3.4.</li>
+<li> Apple GCC's implementation of Altivec uses the older Motorola syntax, as
+  described in the Altivec PIM.  The newer GNU syntax is not yet supported.
+  (Programs using the GNU syntax may compile without messages, yet produce 
+  unexpected results at runtime.)</li>
 <li> Apple's version of GCC 3.3 supports precompiled headers (PCH).
   In the "generic" FSF GCC, precompiled headers will not appear until
   version 3.4.</li>
@@ -633,6 +816,11 @@ DWARF.</li>
   Apple's Objective-C implementation contains numerous fixes and
   improvements, most notably exception and synchronization support
   (see above).</li>
+<li>Apple's version of libstdc++ supports STL debugging mode (see
+  above).  This feature is not yet present in the FSF version.</li>
+<li>The <tt>-fast</tt> option is specific to Apple's version of GCC
+  3.3.  Some of the optimizations controlled by <tt>-fast</tt> are
+  not yet present in the FSF version of GCC.</li>
 </UL>
 
 <hr>
